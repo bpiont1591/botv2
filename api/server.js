@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const dotenv = require('dotenv');
@@ -8,33 +9,74 @@ const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const BOT_API_URL = (process.env.BOT_API_URL || '').trim();
 const BOT_STATUS_PATH = (process.env.BOT_STATUS_PATH || '/internal/status').trim();
+const BOT_GUILDS_PATH = (process.env.BOT_GUILDS_PATH || '/internal/guilds').trim();
+const BOT_PANELS_PATH = (process.env.BOT_PANELS_PATH || '/internal/panels').trim();
+const SHARED_API_SECRET = (process.env.SHARED_API_SECRET || '').trim();
+const PANEL_DATA_FILE = path.join(__dirname, '..', 'data', 'panels.json');
 
 app.use(express.json());
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'index.html'));
+});
+app.get('/dashboard/:guildId', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
-function normalizeStatus(payload) {
-  const state = payload?.overall?.state;
-  const allowed = ['ok', 'degraded', 'down'];
-  const normalizedState = allowed.includes(state) ? state : 'down';
+function readJson(filePath, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (_e) {
+    return fallback;
+  }
+}
 
-  const rawPercent = Number(payload?.overall?.percent);
-  const percent = Number.isFinite(rawPercent)
-    ? Math.max(0, Math.min(100, Math.round(rawPercent)))
-    : normalizedState === 'ok'
+function writeJson(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8');
+}
+
+function normalizeStatus(payload) {
+  const allowedStates = ['ok', 'degraded', 'down'];
+  const state = allowedStates.includes(payload?.overall?.state) ? payload.overall.state : 'down';
+  const percent = Number.isFinite(Number(payload?.overall?.percent))
+    ? Math.max(0, Math.min(100, Math.round(Number(payload.overall.percent))))
+    : state === 'ok'
       ? 100
-      : normalizedState === 'degraded'
+      : state === 'degraded'
         ? 60
         : 0;
 
-  const updatedAt = payload?.updatedAt || new Date().toISOString();
-
   return {
-    overall: { state: normalizedState, percent },
-    ts: updatedAt
+    overall: { state, percent },
+    ts: payload?.updatedAt || payload?.ts || new Date().toISOString()
   };
+}
+
+async function fetchBotJson(pathName) {
+  if (!BOT_API_URL) return null;
+  const target = new URL(pathName, BOT_API_URL).toString();
+  const headers = { Accept: 'application/json' };
+  if (SHARED_API_SECRET) headers['x-shared-secret'] = SHARED_API_SECRET;
+
+  const response = await fetch(target, { method: 'GET', headers });
+  if (!response.ok) {
+    throw new Error(`Bot API HTTP ${response.status}`);
+  }
+  return response.json();
+}
+
+async function putBotJson(pathName, body) {
+  if (!BOT_API_URL) return null;
+  const target = new URL(pathName, BOT_API_URL).toString();
+  const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+  if (SHARED_API_SECRET) headers['x-shared-secret'] = SHARED_API_SECRET;
+
+  const response = await fetch(target, { method: 'PUT', headers, body: JSON.stringify(body) });
+  if (!response.ok) {
+    throw new Error(`Bot API HTTP ${response.status}`);
+  }
+  return response.json();
 }
 
 app.get('/api/status', async (_req, res) => {
@@ -47,29 +89,64 @@ app.get('/api/status', async (_req, res) => {
   }
 
   try {
-    const target = new URL(BOT_STATUS_PATH, BOT_API_URL).toString();
-    const response = await fetch(target, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (!response.ok) {
-      return res.status(200).json({
-        overall: { state: 'down', percent: 0 },
-        ts: new Date().toISOString(),
-        note: `Host bota zwrócił HTTP ${response.status}`
-      });
-    }
-
-    const data = await response.json();
+    const data = await fetchBotJson(BOT_STATUS_PATH);
     return res.json(normalizeStatus(data));
-  } catch (error) {
+  } catch (_error) {
     return res.status(200).json({
       overall: { state: 'down', percent: 0 },
       ts: new Date().toISOString(),
       note: 'Brak połączenia z hostem bota'
     });
   }
+});
+
+app.get('/api/guilds', async (_req, res) => {
+  try {
+    if (BOT_API_URL) {
+      const data = await fetchBotJson(BOT_GUILDS_PATH);
+      return res.json({ guilds: data?.guilds || [] });
+    }
+  } catch (_e) {
+    // fallback below
+  }
+
+  const localGuilds = readJson(path.join(__dirname, '..', 'data', 'guilds.json'), []);
+  return res.json({ guilds: localGuilds });
+});
+
+app.get('/api/modules/:guildId', async (req, res) => {
+  const { guildId } = req.params;
+
+  try {
+    if (BOT_API_URL) {
+      const data = await fetchBotJson(`${BOT_PANELS_PATH}/${guildId}`);
+      return res.json({ guildId, config: data?.config || {} });
+    }
+  } catch (_e) {
+    // fallback below
+  }
+
+  const local = readJson(PANEL_DATA_FILE, {});
+  return res.json({ guildId, config: local[guildId] || {} });
+});
+
+app.put('/api/modules/:guildId', async (req, res) => {
+  const { guildId } = req.params;
+  const nextConfig = req.body || {};
+
+  try {
+    if (BOT_API_URL) {
+      const data = await putBotJson(`${BOT_PANELS_PATH}/${guildId}`, nextConfig);
+      return res.json({ guildId, config: data?.config || {} });
+    }
+  } catch (_e) {
+    // fallback below
+  }
+
+  const local = readJson(PANEL_DATA_FILE, {});
+  local[guildId] = { ...local[guildId], ...nextConfig, updatedAt: new Date().toISOString() };
+  writeJson(PANEL_DATA_FILE, local);
+  return res.json({ guildId, config: local[guildId] });
 });
 
 app.get('/health', (_req, res) => {

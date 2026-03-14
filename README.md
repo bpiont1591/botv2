@@ -1,71 +1,81 @@
-# NebulaPulse — Landing + Panel API dla bota Discord
+# NebulaPulse — Landing + Panel API + Discord Bot (osobny folder)
 
-Gotowy projekt nowoczesnej strony (landing) + prostego backendu API przygotowanego pod scenariusz, gdzie **bot działa na osobnym hoście**.
-
-## Nazwa projektu
-**NebulaPulse**
-
-## Co dostajesz
-- responsywny landing page (ciemny, nowoczesny styl)
-- sekcje: hero, funkcje, moduły, premium, FAQ, CTA, footer
-- status usług pobierany z backendu
-- backend `Express` z endpointem `/api/status`, który może czytać stan z osobnego hosta bota
-- gotowe pliki konfiguracyjne `.env.example`
+Gotowy projekt, gdzie:
+- **Web + API panelu** działa w katalogu głównym
+- **Bot Discord** działa w osobnym folderze `bot/`
+- klient po dodaniu bota na serwer może wejść na `.../dashboard/:guildId` i edytować moduły panelu
 
 ## Struktura
 
-- `index.html` — główna strona
+- `index.html` — landing + widok edytora dashboardu
 - `assets/styles.css` — style
-- `assets/app.js` — logika frontendu (toast, FAQ, status)
-- `api/server.js` — backend API
-- `package.json` — skrypty i zależności
-- `.env.example` — konfiguracja hostów
+- `assets/app.js` — status + edytor modułów dashboardu
+- `api/server.js` — API webowe (`/api/status`, `/api/guilds`, `/api/modules/:guildId`)
+- `bot/index.js` — bot Discord + wewnętrzne API (`/internal/*`)
+- `data/panels.json` — zapis konfiguracji modułów
+- `data/guilds.json` — snapshot serwerów, na których jest bot
 
-## Wymagania
-- Node.js 18+
+## Jak to działa (osobne hosty)
+
+1. Użytkownik dodaje bota na serwer Discord.
+2. Bot synchronizuje listę guild do `data/guilds.json` i odpowiada przez `/internal/guilds`.
+3. Web pyta bot API o status i konfiguracje paneli.
+4. Na stronie `/dashboard/:guildId` użytkownik edytuje ustawienia modułów.
+5. Zapis idzie do `/api/modules/:guildId`, a dalej do bota (`/internal/panels/:guildId`).
+
+## Konfiguracja web (root)
+
+`.env` (na podstawie `.env.example`):
+
+- `PORT` — port web+api
+- `BOT_API_URL` — URL do bota (np. `http://localhost:4100` lub inny host)
+- `BOT_STATUS_PATH` — status bota
+- `BOT_GUILDS_PATH` — lista guild
+- `BOT_PANELS_PATH` — endpoint konfiguracji paneli
+- `SHARED_API_SECRET` — wspólny sekret web ↔ bot
+
+## Konfiguracja bota (`bot/.env`)
+
+- `BOT_TOKEN` — token bota z Discord Developer Portal
+- `BOT_CLIENT_ID` — application client ID
+- `BOT_API_PORT` — port API bota (domyślnie 4100)
+- `BOT_HOST` — host bota (domyślnie 0.0.0.0)
+- `SHARED_API_SECRET` — taki sam jak w web
+- `PANEL_DATA_FILE` — ścieżka do JSON z konfiguracją
+- `GUILDS_DATA_FILE` — ścieżka do JSON z guildami
+- `WEB_BASE_URL` — URL panelu (używany przez komendę `/panel-link`)
 
 ## Uruchomienie
 
+### 1) Web
 ```bash
 npm install
 cp .env.example .env
 npm run dev
 ```
 
-Domyślnie:
-- landing: `http://localhost:3000`
-- API status: `http://localhost:3000/api/status`
-
-## Najważniejsze ENV
-
-- `PORT` — port aplikacji
-- `BOT_API_URL` — URL hosta bota (np. `https://bot.twojadomena.pl`)
-- `BOT_STATUS_PATH` — endpoint statusu po stronie bota (np. `/internal/status`)
-
-## Integracja z botem na osobnym hoście
-
-Backend NebulaPulse:
-1. pyta bota pod `BOT_API_URL + BOT_STATUS_PATH`
-2. normalizuje odpowiedź do formatu frontendu
-3. fallbackuje do `down` przy braku połączenia
-
-Dzięki temu frontend nie musi łączyć się bezpośrednio z hostem bota.
-
-## Przykładowy format odpowiedzi oczekiwany od hosta bota
-
-```json
-{
-  "overall": { "state": "ok", "percent": 100 },
-  "updatedAt": "2026-03-14T12:00:00.000Z"
-}
-```
-
-Dozwolone `state`: `ok`, `degraded`, `down`
-
-## Produkcja
-
+### 2) Bot (osobny folder)
 ```bash
-npm run start
+cd bot
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-Możesz postawić aplikację jako jeden serwis web+api (Node) i trzymać bota osobno.
+## Najważniejsze endpointy
+
+### Web API
+- `GET /api/status`
+- `GET /api/guilds`
+- `GET /api/modules/:guildId`
+- `PUT /api/modules/:guildId`
+
+### Bot Internal API
+- `GET /internal/status`
+- `GET /internal/guilds`
+- `GET /internal/panels/:guildId`
+- `PUT /internal/panels/:guildId`
+
+## Komenda bota
+- `/panel-link` — zwraca link do dashboardu danego serwera.
+
