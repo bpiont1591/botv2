@@ -1,0 +1,24 @@
+{
+  "name": "nebulapulse",
+  "version": "1.0.0",
+  "description": "Nowoczesny landing + API dla bota Discord na osobnym hoście",
+  "main": "api/server.js",
+  "scripts": {
+    "dev": "node api/server.js",
+    "start": "NODE_ENV=production node api/server.js",
+    "check": "node --check api/server.js && node --check assets/app.js"
+  },
+  "keywords": [
+    "discord",
+    "dashboard",
+    "landing",
+    "bot",
+    "express"
+  ],
+  "author": "NebulaPulse",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}

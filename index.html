@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NebulaPulse | Dashboard dla Twojego bota Discord</title>
+  <meta name="description" content="NebulaPulse — nowoczesny landing i panel API dla bota Discord działającego na osobnym hoście." />
+  <meta name="api-base-url" content="" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <span class="logo-dot"></span>
+        <span>Nebula<span style="color:#8b5cf6">Pulse</span></span>
+      </div>
+      <nav class="links">
+        <a class="btn btn-secondary" href="#funkcje">Funkcje</a>
+        <a class="btn btn-secondary" href="#premium">Premium</a>
+        <a class="btn btn-primary" href="/login">Zaloguj Discord</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="tag">Bot hostowany osobno • Panel WWW</span>
+          <h1 class="h1">Zarządzaj serwerem przez <span class="gradient-text">jeden przejrzysty panel</span></h1>
+          <p class="lead">
+            NebulaPulse to gotowy front i API pod bota Discord na osobnym hoście.
+            Moderacja, tickety, ekonomia, automod i status usług — bez mieszania warstwy webowej z procesem bota.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://discord.com/api/oauth2/authorize?client_id=1474835666603999354&permissions=8&scope=bot%20applications.commands" target="_blank" rel="noreferrer">Zaproś bota</a>
+            <a class="btn btn-secondary" href="#moduly">Zobacz moduły</a>
+          </div>
+        </div>
+
+        <div class="glass status-box">
+          <div class="status-row">
+            <strong>Status usług</strong>
+            <span id="servicePercent" class="status-chip">--%</span>
+          </div>
+          <p id="serviceSummary" style="margin:12px 0 4px">Sprawdzam stan usług...</p>
+          <small id="serviceUpdated" style="color:#aab1c5">Aktualizacja: --</small>
+          <hr style="border-color:rgba(255,255,255,.08); margin:16px 0;"/>
+          <p style="margin:0; color:#aab1c5; font-size:14px;">API pobiera status z osobnego hosta bota przez <code>/api/status</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="funkcje">
+      <div class="container">
+        <h2 class="section-title">Dlaczego ten projekt dobrze działa z botem na osobnym hoście</h2>
+        <p class="section-lead">Frontend nie zależy bezpośrednio od procesu bota. Komunikacja idzie przez warstwę API.</p>
+        <div class="grid-3">
+          <article class="card">
+            <h3>Rozdzielona architektura</h3>
+            <p>Bot działa na osobnym VPS/hostingu, a panel WWW może być wdrożony osobno bez przestojów.</p>
+          </article>
+          <article class="card">
+            <h3>Jedno źródło konfiguracji</h3>
+            <p>Panel zapisuje ustawienia, bot odczytuje je przez API/DB. Mniej konfliktów i prostszy deploy.</p>
+          </article>
+          <article class="card">
+            <h3>Status usług na żywo</h3>
+            <p>Widżet statusu informuje użytkowników o stanie bota bez ujawniania backendowych endpointów publicznie.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="moduly">
+      <div class="container">
+        <h2 class="section-title">Moduły gotowe do podpięcia</h2>
+        <p class="section-lead">Strona jest pod modułowy dashboard: aktywujesz sekcje według planu i potrzeb serwera.</p>
+        <div class="grid-3">
+          <article class="card"><h3>🛡️ Automoderator</h3><p>Blokada linków, spamu i raidów + system kar.</p></article>
+          <article class="card"><h3>🎫 Tickety</h3><p>Kanały zgłoszeń, przejmowanie ticketów, transkrypty.</p></article>
+          <article class="card"><h3>💰 Ekonomia</h3><p>Praca, napady, sklep, transfery i balans użytkownika.</p></article>
+          <article class="card"><h3>📜 Logi</h3><p>Edycje wiadomości, bany, role, zmiany kanałów i audyt.</p></article>
+          <article class="card"><h3>⭐ XP i rangi</h3><p>Poziomy aktywności, role za level, konfiguracja progów.</p></article>
+          <article class="card"><h3>⚙️ Automatyzacje</h3><p>Autorespondery, cykliczne ogłoszenia i reguły czasowe.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="premium">
+      <div class="container">
+        <div class="pricing glass">
+          <h2 class="section-title" style="margin-top:0">NebulaPulse PRO</h2>
+          <p class="section-lead">Odblokuj pełny zestaw: backupy, automatyzacje PRO, zaawansowane statystyki i rozszerzone limity modułów.</p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="/login">Przejdź do panelu</a>
+            <a class="btn btn-secondary" href="https://discord.gg/sUdK3y4fxj" target="_blank" rel="noreferrer">Support Discord</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section id="dashboardEditor" style="display:none;">
+      <div class="container">
+        <div class="glass" style="padding:24px;">
+          <h2 class="section-title" style="margin-top:0">Edytor panelu serwera</h2>
+          <p class="section-lead">Konfigurujesz serwer ID: <strong id="dashboardGuildId">-</strong></p>
+          <form id="dashboardForm" class="grid-3">
+            <label class="card" style="display:flex;align-items:center;gap:10px;">
+              <input id="modAutomod" type="checkbox" />
+              <span>Włącz Automod</span>
+            </label>
+            <label class="card" style="display:flex;align-items:center;gap:10px;">
+              <input id="modTickets" type="checkbox" />
+              <span>Włącz Tickety</span>
+            </label>
+            <label class="card" style="display:flex;align-items:center;gap:10px;">
+              <input id="modEconomy" type="checkbox" />
+              <span>Włącz Ekonomię</span>
+            </label>
+            <div class="card" style="grid-column:1/-1;">
+              <label for="welcomeMessage" style="font-weight:700;display:block;margin-bottom:8px;">Wiadomość powitalna</label>
+              <textarea id="welcomeMessage" rows="4" style="width:100%;background:#0f1420;color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;"></textarea>
+            </div>
+            <div style="grid-column:1/-1;">
+              <button class="btn btn-primary" type="submit">Zapisz ustawienia</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="container faq">
+        <h2 class="section-title">FAQ</h2>
+        <details open>
+          <summary>Czy bot musi być na tym samym hostingu co strona?</summary>
+          <p>Nie. Ten projekt jest właśnie pod scenariusz oddzielnych hostów. Wystarczy poprawnie ustawić `BOT_API_URL`.</p>
+        </details>
+        <details>
+          <summary>Jak działa status usług?</summary>
+          <p>Frontend pyta endpoint `/api/status`, a backend po stronie strony pyta host bota i zwraca ujednolicony JSON.</p>
+        </details>
+        <details>
+          <summary>Czy mogę rozbudować to do pełnego dashboardu?</summary>
+          <p>Tak, wystarczy dodać logowanie Discord OAuth2 i endpointy modułów (`/api/guilds`, `/api/modules`).</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <strong>NebulaPulse</strong> • Gotowy szkielet strony i API pod bota Discord na osobnym hoście • © 2026
+    </div>
+  </footer>
+
+  <div id="toast" class="toast"><span id="toastText">OK</span></div>
+  <script src="/assets/app.js"></script>
+</body>
+</html>
