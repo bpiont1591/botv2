@@ -5,6 +5,15 @@
     updated: document.getElementById('serviceUpdated')
   };
 
+  const configuredApiBase = (document.querySelector('meta[name="api-base-url"]')?.content || '').trim();
+  const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const API_BASE_URL = configuredApiBase || (isLocal ? '' : '');
+
+  function apiUrl(path) {
+    if (!API_BASE_URL) return path;
+    return `${API_BASE_URL.replace(/\/$/, '')}${path}`;
+  }
+
   function showToast(text, error = false) {
     const toast = document.getElementById('toast');
     const msg = document.getElementById('toastText');
@@ -35,7 +44,7 @@
 
   async function fetchStatus() {
     try {
-      const res = await fetch('/api/status', { cache: 'no-store' });
+      const res = await fetch(apiUrl('/api/status'), { cache: 'no-store' });
       const data = await res.json();
       applyStatus(data?.overall?.state || 'down', Number(data?.overall?.percent || 0));
       if (statusEls.updated) {
@@ -67,7 +76,7 @@
     const welcomeMessage = document.getElementById('welcomeMessage');
 
     try {
-      const res = await fetch(`/api/modules/${guildId}`);
+      const res = await fetch(apiUrl(`/api/modules/${guildId}`));
       const data = await res.json();
       const c = data?.config || {};
       modAutomod.checked = Boolean(c.automod);
@@ -88,7 +97,7 @@
       };
 
       try {
-        const res = await fetch(`/api/modules/${guildId}`, {
+        const res = await fetch(apiUrl(`/api/modules/${guildId}`), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

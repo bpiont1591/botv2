@@ -12,7 +12,20 @@ const BOT_STATUS_PATH = (process.env.BOT_STATUS_PATH || '/internal/status').trim
 const BOT_GUILDS_PATH = (process.env.BOT_GUILDS_PATH || '/internal/guilds').trim();
 const BOT_PANELS_PATH = (process.env.BOT_PANELS_PATH || '/internal/panels').trim();
 const SHARED_API_SECRET = (process.env.SHARED_API_SECRET || '').trim();
+const CORS_ORIGIN = (process.env.CORS_ORIGIN || 'https://botv2.pages.dev').trim();
 const PANEL_DATA_FILE = path.join(__dirname, '..', 'data', 'panels.json');
+
+app.use((req, res, next) => {
+  const reqOrigin = req.get('origin') || '';
+  if (CORS_ORIGIN === '*' || reqOrigin === CORS_ORIGIN) {
+    res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN === '*' ? '*' : reqOrigin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-shared-secret');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  return next();
+});
 
 app.use(express.json());
 app.use('/assets', express.static(path.join(__dirname, '..', 'assets')));

@@ -1,60 +1,102 @@
 # NebulaPulse — Landing + Panel API + Discord Bot (osobny folder)
 
 Gotowy projekt, gdzie:
-- **Web + API panelu** działa w katalogu głównym
-- **Bot Discord** działa w osobnym folderze `bot/`
+- **Frontend** hostujesz np. na Cloudflare Pages (`botv2.pages.dev`)
+- **Web API (Node/Express)** działa jako osobna usługa
+- **Bot Discord** działa w osobnym folderze `bot/` i może być na osobnym hoście
 - klient po dodaniu bota na serwer może wejść na `.../dashboard/:guildId` i edytować moduły panelu
 
 ## Struktura
 
 - `index.html` — landing + widok edytora dashboardu
 - `assets/styles.css` — style
-- `assets/app.js` — status + edytor modułów dashboardu
+- `assets/app.js` — status + edytor modułów dashboardu + `API_BASE_URL`
 - `api/server.js` — API webowe (`/api/status`, `/api/guilds`, `/api/modules/:guildId`)
 - `bot/index.js` — bot Discord + wewnętrzne API (`/internal/*`)
 - `data/panels.json` — zapis konfiguracji modułów
 - `data/guilds.json` — snapshot serwerów, na których jest bot
+- `_redirects` — fallback dla `/dashboard/*` na Cloudflare Pages
 
 ## Jak to działa (osobne hosty)
 
 1. Użytkownik dodaje bota na serwer Discord.
 2. Bot synchronizuje listę guild do `data/guilds.json` i odpowiada przez `/internal/guilds`.
-3. Web pyta bot API o status i konfiguracje paneli.
-4. Na stronie `/dashboard/:guildId` użytkownik edytuje ustawienia modułów.
-5. Zapis idzie do `/api/modules/:guildId`, a dalej do bota (`/internal/panels/:guildId`).
+3. Web API pyta bot API o status i konfiguracje paneli.
+4. Frontend na `botv2.pages.dev` pyta Web API przez CORS.
+5. Na stronie `/dashboard/:guildId` użytkownik edytuje ustawienia modułów.
+6. Zapis idzie do `/api/modules/:guildId`, a dalej do bota (`/internal/panels/:guildId`).
 
-## Konfiguracja web (root)
+---
 
-`.env` (na podstawie `.env.example`):
+## Production-ready pod `botv2.pages.dev`
 
-- `PORT` — port web+api
-- `BOT_API_URL` — URL do bota (np. `http://localhost:4100` lub inny host)
-- `BOT_STATUS_PATH` — status bota
-- `BOT_GUILDS_PATH` — lista guild
-- `BOT_PANELS_PATH` — endpoint konfiguracji paneli
-- `SHARED_API_SECRET` — wspólny sekret web ↔ bot
+### 1) Frontend (Cloudflare Pages)
 
-## Konfiguracja bota (`bot/.env`)
+W `index.html` ustaw:
 
-- `BOT_TOKEN` — token bota z Discord Developer Portal
-- `BOT_CLIENT_ID` — application client ID
-- `BOT_API_PORT` — port API bota (domyślnie 4100)
-- `BOT_HOST` — host bota (domyślnie 0.0.0.0)
-- `SHARED_API_SECRET` — taki sam jak w web
-- `PANEL_DATA_FILE` — ścieżka do JSON z konfiguracją
-- `GUILDS_DATA_FILE` — ścieżka do JSON z guildami
-- `WEB_BASE_URL` — URL panelu (używany przez komendę `/panel-link`)
+```html
+<meta name="api-base-url" content="https://API_TWOJEJ_USLUGI.pl" />
+```
 
-## Uruchomienie
+Przykład:
 
-### 1) Web
+```html
+<meta name="api-base-url" content="https://api.botv2.pl" />
+```
+
+> Gdy meta jest pusta, frontend używa lokalnego fallbacku (dev/same-origin).
+
+### 2) Web API (Express) — `.env`
+
+```env
+PORT=3000
+BOT_API_URL=https://BOT_HOST.twojadomena.pl
+BOT_STATUS_PATH=/internal/status
+BOT_GUILDS_PATH=/internal/guilds
+BOT_PANELS_PATH=/internal/panels
+SHARED_API_SECRET=super-mocny-sekret
+CORS_ORIGIN=https://botv2.pages.dev
+```
+
+### 3) Bot (`bot/.env`)
+
+```env
+BOT_TOKEN=...
+BOT_CLIENT_ID=...
+BOT_API_PORT=4100
+BOT_HOST=0.0.0.0
+SHARED_API_SECRET=super-mocny-sekret
+PANEL_DATA_FILE=../data/panels.json
+GUILDS_DATA_FILE=../data/guilds.json
+WEB_BASE_URL=https://botv2.pages.dev
+```
+
+`WEB_BASE_URL` sprawia, że komenda `/panel-link` zwraca poprawny URL dashboardu.
+
+### 4) CORS
+
+Web API już ma CORS oparty o `CORS_ORIGIN` (domyślnie `https://botv2.pages.dev`).
+
+### 5) Routing dashboardu na Pages
+
+Plik `_redirects` zapewnia działanie linków typu:
+
+- `/dashboard/123456789012345678`
+
+bez błędu 404.
+
+---
+
+## Konfiguracja dev / lokalnie
+
+### Web (root)
 ```bash
 npm install
 cp .env.example .env
 npm run dev
 ```
 
-### 2) Bot (osobny folder)
+### Bot (osobny folder)
 ```bash
 cd bot
 npm install
@@ -62,7 +104,11 @@ cp .env.example .env
 npm run dev
 ```
 
-## Najważniejsze endpointy
+W dev możesz zostawić `<meta name="api-base-url" content="" />`, wtedy frontend woła lokalne `/api/*`.
+
+---
+
+## Endpointy
 
 ### Web API
 - `GET /api/status`
@@ -78,4 +124,3 @@ npm run dev
 
 ## Komenda bota
 - `/panel-link` — zwraca link do dashboardu danego serwera.
-
